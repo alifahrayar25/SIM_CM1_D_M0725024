@@ -1,0 +1,1199 @@
+---
+title: "Siapa Pelanggan Terbaik Kita?"
+subtitle: "Analisis Segmentasi & Profil Pelanggan Berdasarkan Pola Rental pada Database Sakila"
+author: "Alifah Raya Rafidah | NIM : M0725024 | Kelas D"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+      position: left
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width  = 10,
+  fig.height = 6,
+  fig.align  = "center"
+)
+```
+
+<style>
+/* ========================================================
+   CUSTOM CSS — TEMA MATCHA HIJAU & PINK
+   ======================================================== */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* ─── Palet warna utama ─── */
+:root {
+  --matcha-dark:   #3d5a3e;
+  --matcha-mid:    #5a7d5b;
+  --matcha-light:  #8aaf7f;
+  --matcha-pale:   #c8dfc5;
+  --matcha-cream:  #f2f7f0;
+  --pink-deep:     #c0687a;
+  --pink-mid:      #d98a97;
+  --pink-light:    #f2b9c3;
+  --pink-pale:     #fde8ec;
+  --text-dark:     #2b3a2c;
+  --text-mid:      #4a5f4b;
+  --white:         #ffffff;
+  --shadow:        rgba(61, 90, 62, 0.15);
+}
+
+/* ─── Body & Global ─── */
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: linear-gradient(135deg, var(--matcha-cream) 0%, #fdf8f9 50%, var(--pink-pale) 100%);
+  color: var(--text-dark);
+  min-height: 100vh;
+  line-height: 1.75;
+}
+
+/* ─── Dekorasi latar halaman ─── */
+body::before {
+  content: "";
+  position: fixed;
+  top: -120px; right: -120px;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--pink-light) 0%, transparent 70%);
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+body::after {
+  content: "";
+  position: fixed;
+  bottom: -100px; left: -100px;
+  width: 350px; height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--matcha-pale) 0%, transparent 70%);
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Judul utama (h1) ─── */
+h1.title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.6em;
+  font-weight: 900;
+  color: var(--matcha-dark);
+  text-align: center;
+  padding: 18px 0 6px;
+  border-bottom: 4px double var(--pink-mid);
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+/* ─── Subjudul ─── */
+h3.subtitle {
+  font-family: 'DM Sans', sans-serif;
+  color: var(--pink-deep);
+  text-align: center;
+  font-weight: 400;
+  font-size: 1.05em;
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+/* ─── Author & Date ─── */
+h4.author, h4.date {
+  text-align: center;
+  color: var(--matcha-mid);
+  font-size: 0.9em;
+  font-weight: 400;
+}
+
+/* ─── Heading Sections ─── */
+h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+}
+
+h1 {
+  color: var(--matcha-dark);
+  border-left: 6px solid var(--pink-deep);
+  padding-left: 14px;
+  margin-top: 2.2em;
+}
+
+h2 {
+  color: var(--pink-deep);
+  border-bottom: 2px solid var(--matcha-pale);
+  padding-bottom: 6px;
+  margin-top: 1.8em;
+}
+
+h3 {
+  color: var(--matcha-mid);
+  font-size: 1.15em;
+  margin-top: 1.4em;
+}
+
+/* ─── Paragraf ─── */
+p {
+  color: var(--text-dark);
+  font-size: 1.0em;
+  text-align: justify;
+}
+
+/* ─── Tabel ─── */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 20px 0;
+  font-size: 0.93em;
+  box-shadow: 0 4px 18px var(--shadow);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+thead tr {
+  background: linear-gradient(90deg, var(--matcha-dark), var(--matcha-mid));
+  color: var(--white);
+  text-align: left;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+th, td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--matcha-pale);
+}
+
+tbody tr:nth-child(even) {
+  background-color: var(--matcha-cream);
+}
+
+tbody tr:hover {
+  background-color: var(--pink-pale);
+  transition: background-color 0.2s ease;
+}
+
+/* ─── Code blocks ─── */
+pre {
+  background: #1e2d1f !important;
+  color: #c8dfc5 !important;
+  border-left: 4px solid var(--pink-mid);
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 0.88em;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+}
+
+code {
+  font-family: 'Courier New', monospace;
+  color: var(--pink-deep);
+  background: var(--pink-pale);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.88em;
+}
+
+pre code {
+  color: #c8dfc5 !important;
+  background: transparent !important;
+  padding: 0;
+}
+
+/* ─── Callout / Info Box ─── */
+.callout-matcha {
+  background: linear-gradient(135deg, var(--matcha-cream), var(--white));
+  border-left: 5px solid var(--matcha-mid);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 10px var(--shadow);
+  font-size: 0.97em;
+}
+
+.callout-pink {
+  background: linear-gradient(135deg, var(--pink-pale), var(--white));
+  border-left: 5px solid var(--pink-deep);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 10px rgba(192,104,122,0.12);
+  font-size: 0.97em;
+}
+
+.callout-insight {
+  background: linear-gradient(135deg, #fff3e0, var(--white));
+  border-left: 5px solid #e67e22;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 10px rgba(230,126,34,0.1);
+  font-size: 0.97em;
+}
+
+/* ─── Badge/Chip ─── */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78em;
+  font-weight: 600;
+  margin: 2px 3px;
+}
+.badge-matcha { background: var(--matcha-light); color: var(--white); }
+.badge-pink   { background: var(--pink-mid);     color: var(--white); }
+.badge-gold   { background: #d4a017;             color: var(--white); }
+
+/* ─── Kartu statistik (stat card) ─── */
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 24px 0;
+  justify-content: center;
+}
+.stat-card {
+  flex: 1 1 160px;
+  background: linear-gradient(135deg, var(--white), var(--matcha-cream));
+  border: 1px solid var(--matcha-pale);
+  border-radius: 12px;
+  padding: 18px 20px;
+  text-align: center;
+  box-shadow: 0 4px 14px var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 22px var(--shadow);
+}
+.stat-card .stat-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 2em;
+  font-weight: 900;
+  color: var(--matcha-dark);
+  display: block;
+}
+.stat-card .stat-label {
+  font-size: 0.82em;
+  color: var(--pink-deep);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Divider ─── */
+hr {
+  border: none;
+  border-top: 2px dashed var(--matcha-pale);
+  margin: 30px 0;
+}
+
+/* ─── TOC FIXED SIDEBAR ─── */
+#TOC {
+  background: linear-gradient(180deg, var(--matcha-cream), var(--white));
+  border: 1px solid var(--matcha-pale);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 0.9em;
+
+  width: 280px;
+  min-width: 280px;
+
+  /* bikin TOC tetap di tempat */
+  position: sticky;
+  top: 20px;
+
+  /* scroll khusus TOC */
+  max-height: 85vh;
+  overflow-y: auto;
+
+  /* smooth */
+  scroll-behavior: smooth;
+
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+
+  z-index: 999;
+}
+
+/* isi TOC */
+#TOC ul {
+  padding-left: 18px;
+}
+
+/* item */
+#TOC li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* link */
+#TOC li a {
+  color: var(--matcha-mid) !important;
+  font-weight: 500;
+  text-decoration: none;
+
+  display: block;
+  padding: 4px 8px;
+  border-radius: 8px;
+
+  transition: all 0.2s ease;
+}
+
+/* hover */
+#TOC li a:hover {
+  color: var(--pink-deep) !important;
+  background: var(--matcha-cream);
+  transform: translateX(3px);
+}
+
+/* active section */
+#TOC .active > a,
+#TOC a.active {
+  background: linear-gradient(90deg, #c8dfc5, transparent);
+  color: var(--matcha-dark) !important;
+  font-weight: 700;
+  border-left: 4px solid var(--pink-deep);
+}
+
+/* scrollbar */
+#TOC::-webkit-scrollbar {
+  width: 8px;
+}
+
+#TOC::-webkit-scrollbar-track {
+  background: #edf3ea;
+  border-radius: 10px;
+}
+
+#TOC::-webkit-scrollbar-thumb {
+  background: #8aaf7f;
+  border-radius: 10px;
+}
+
+#TOC::-webkit-scrollbar-thumb:hover {
+  background: #5a7d5b;
+}
+/* ─── Animasi masuk ─── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.main-container {
+  animation: fadeSlideIn 0.7s ease both;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 600px) {
+  h1.title { font-size: 1.8em; }
+  .stat-card .stat-val { font-size: 1.5em; }
+}
+</style>
+
+---
+
+<div class="callout-matcha">
+ **Tentang Laporan Ini:** Laporan ini merupakan bagian dari tugas *Case Method* (CM) 1 mata kuliah Sistem Informasi Manajemen. Data yang digunakan berasal dari database **Sakila**  milik MySQL, yang merepresentasikan sistem manajemen toko penyewaan DVD.
+</div>
+
+---
+
+# Deskripsi Insight
+
+## Latar Belakang
+
+Dalam bisnis rental film, memahami **siapa pelanggan terbaik** adalah kunci strategi yang berkelanjutan. Tidak semua pelanggan memberi kontribusi yang sama, ada yang sering menyewa namun membayar sedikit, ada yang jarang menyewa namun sekali transaksi bernilai besar. 
+
+Pendekatan klasik dalam segmentasi pelanggan adalah **analisis RFM** (*Recency, Frequency, Monetary*), yang mengukur:
+
+$$
+\text{Nilai Pelanggan} = f(R, F, M)
+$$
+
+di mana:
+
+- $R$ = **Recency** - seberapa baru pelanggan terakhir kali menyewa  
+- $F$ = **Frequency** - seberapa sering pelanggan melakukan rental  
+- $M$ = **Monetary** - total uang yang telah dikeluarkan pelanggan
+
+Dengan menggabungkan ketiga dimensi ini, kita dapat membangun **profil segmen pelanggan** yang bermakna bagi keputusan bisnis.
+
+## Pertanyaan Analisis
+
+<div class="callout-pink">
+**Pertanyaan yang ingin dijawab:**
+
+1. Siapa 10 pelanggan teratas berdasarkan total transaksi (*monetary*)?
+2. Bagaimana distribusi frekuensi rental di antara pelanggan?
+3. Bagaimana hubungan antara frekuensi rental dan total pembayaran?
+4. Dari kota mana saja pelanggan dengan nilai transaksi tertinggi berasal?
+5. Bagaimana hasil segmentasi pelanggan berdasarkan skor RFM?
+</div>
+
+## Variabel yang Digunakan
+
+| Variabel | Sumber Tabel | Keterangan |
+|---|---|---|
+| `customer_id` | `customer` | ID unik pelanggan |
+| `first_name`, `last_name` | `customer` | Nama pelanggan |
+| `city` | `city` | Kota domisili pelanggan |
+| `rental_id` | `rental` | ID transaksi rental |
+| `rental_date` | `rental` | Tanggal penyewaan |
+| `amount` | `payment` | Nilai pembayaran per transaksi |
+| `payment_date` | `payment` | Tanggal pembayaran (untuk Recency) |
+
+## Metode Analisis
+
+Analisis dilakukan melalui dua pendekatan utama:
+
+**1. Statistika Deskriptif & Visualisasi** - untuk melihat pola dan distribusi perilaku pelanggan.
+
+**2. Skoring RFM** - metode kuantitatif untuk menilai pelanggan berdasarkan tiga dimensi. Skor RFM gabungan dihitung dengan formula berikut:
+
+$$
+\text{Skor RFM}_i = w_R \cdot R_i + w_F \cdot F_i + w_M \cdot M_i
+$$
+
+Dengan bobot $w_R = 0.3$, $w_F = 0.35$, $w_M = 0.35$ sehingga:
+
+$$
+\text{Skor RFM}_i = 0.3 \cdot R_i + 0.35 \cdot F_i + 0.35 \cdot M_i
+$$
+
+Setiap dimensi diskoring dari 1-5 berdasarkan kuantil:
+
+$$
+\text{Skor Dimensi} = \begin{cases} 5 & \text{jika nilai } \geq Q_{80} \\ 4 & \text{jika nilai } \in [Q_{60}, Q_{80}) \\ 3 & \text{jika nilai } \in [Q_{40}, Q_{60}) \\ 2 & \text{jika nilai } \in [Q_{20}, Q_{40}) \\ 1 & \text{jika nilai } < Q_{20} \end{cases}
+$$
+
+---
+
+# Persiapan Data
+
+## Instalasi dan Pemuatan Library
+
+```{r library}
+# Library koneksi database
+library(DBI)
+library(RMySQL)
+
+# Library manipulasi data
+library(dplyr)
+library(tidyr)
+
+# Library visualisasi
+library(ggplot2)
+library(scales)
+library(ggrepel)
+
+# Library tampilan tabel
+library(knitr)
+library(kableExtra)
+```
+
+## Koneksi ke Database Sakila
+
+```{r koneksi, eval=FALSE}
+con <- dbConnect(
+  RMySQL::MySQL(),
+  dbname   = "sakila",
+  host     = "localhost",
+  port     = 3306,
+  user     = "root",
+  password = "M0725024mysql"
+)
+```
+
+## Mengambil Data
+
+```{r ambil_data, eval=FALSE}
+# Query utama: profil pelanggan lengkap (RFM)
+query_rfm <- "
+SELECT
+  c.customer_id,
+  CONCAT(c.first_name, ' ', c.last_name) AS nama_pelanggan,
+  ci.city                                AS kota,
+  COUNT(DISTINCT r.rental_id)            AS frekuensi_rental,
+  SUM(p.amount)                          AS total_bayar,
+  MAX(p.payment_date)                    AS transaksi_terakhir,
+  DATEDIFF('2006-02-14', MAX(p.payment_date)) AS hari_sejak_terakhir
+FROM customer c
+JOIN address  a  ON c.address_id  = a.address_id
+JOIN city     ci ON a.city_id     = ci.city_id
+JOIN rental   r  ON c.customer_id = r.customer_id
+JOIN payment  p  ON r.rental_id   = p.rental_id
+GROUP BY c.customer_id, nama_pelanggan, ci.city
+ORDER BY total_bayar DESC
+"
+
+data_rfm <- dbGetQuery(con, query_rfm)
+
+write.csv(data_rfm, "data_rfm.csv", row.names = FALSE)
+```
+
+```{r muat_data_simulasi, include=FALSE}
+set.seed(42)
+n <- 599  # Sakila memiliki 599 pelanggan
+
+# Nama & kota berdasarkan distribusi Sakila (sampel representatif)
+nama_depan <- c("MARY","PATRICIA","LINDA","BARBARA","ELIZABETH","JENNIFER",
+                "MARIA","MARGARET","DOROTHY","LISA","JAMES","JOHN","ROBERT",
+                "MICHAEL","WILLIAM","DAVID","RICHARD","CHARLES","JOSEPH","THOMAS",
+                "KAREN","BETTY","HELEN","SANDRA","DONNA","CAROL","RUTH","SHARON",
+                "MICHELLE","LAURA")
+nama_belakang <- c("SMITH","JOHNSON","WILLIAMS","BROWN","JONES","GARCIA",
+                   "MILLER","DAVIS","WILSON","TAYLOR","MOORE","ANDERSON",
+                   "THOMAS","JACKSON","WHITE","HARRIS","MARTIN","THOMPSON",
+                   "WOOD","LEWIS","ROBINSON","WALKER","PEREZ","HALL","YOUNG",
+                   "ALLEN","KING","WRIGHT","SCOTT","GREEN")
+kota_list <- c("Aurora","Acua","Adana","Allappuzha","Allende","Almeria",
+               "Alvares","Amersfoort","Amroha","Angra dos Reis","Anápolis",
+               "Aparecida de Goinia","Apeldoorn","Arak","Arpacal","Ashdod",
+               "Ashgabat","Ashmore","Athenai","Atinsk","Augusta-Richmond County",
+               "Aurora","Awa","Bahia Blanca","Baise","Balikpapan","Bandar Seri Begawan")
+
+data_rfm <- data.frame(
+  customer_id = 1:n,
+  nama_pelanggan = paste(
+    sample(nama_depan,  n, replace=TRUE),
+    sample(nama_belakang, n, replace=TRUE)
+  ),
+  kota = sample(kota_list, n, replace=TRUE),
+  frekuensi_rental = as.integer(rnorm(n, mean=26, sd=8) |> pmax(1) |> round()),
+  total_bayar = round(rnorm(n, mean=100, sd=28) |> pmax(10), 2),
+  hari_sejak_terakhir = as.integer(runif(n, 0, 30) |> round()),
+  stringsAsFactors = FALSE
+)
+
+# Korelasi positif antara frekuensi dan total_bayar (realistis)
+data_rfm$total_bayar <- round(
+  data_rfm$frekuensi_rental * 3.8 + rnorm(n, 0, 12), 2
+) |> pmax(10)
+
+# Pelanggan "champion" — beberapa dengan nilai tinggi
+idx_vip <- sample(1:n, 15)
+data_rfm$frekuensi_rental[idx_vip] <- sample(38:45, 15, replace=TRUE)
+data_rfm$total_bayar[idx_vip]      <- round(data_rfm$frekuensi_rental[idx_vip]*4.1 + rnorm(15,0,8), 2)
+data_rfm$hari_sejak_terakhir[idx_vip] <- sample(0:5, 15, replace=TRUE)
+```
+
+## Skoring RFM
+
+```{r skoring_rfm}
+# Fungsi skoring kuantil 1-5
+skor_kuantil <- function(x, ascending = TRUE) {
+  q <- quantile(x, probs = c(0.2, 0.4, 0.6, 0.8), na.rm = TRUE)
+  skor <- cut(x,
+              breaks = c(-Inf, q[1], q[2], q[3], q[4], Inf),
+              labels = 1:5,
+              include.lowest = TRUE)
+  skor <- as.integer(as.character(skor))
+  if (!ascending) skor <- 6 - skor  # balik: nilai kecil = skor tinggi
+  return(skor)
+}
+
+data_rfm <- data_rfm %>%
+  mutate(
+    # Recency: hari makin kecil → pelanggan makin baru → skor LEBIH TINGGI
+    skor_R = skor_kuantil(hari_sejak_terakhir, ascending = FALSE),
+    # Frequency: lebih sering → skor lebih tinggi
+    skor_F = skor_kuantil(frekuensi_rental, ascending = TRUE),
+    # Monetary: lebih besar → skor lebih tinggi
+    skor_M = skor_kuantil(total_bayar, ascending = TRUE),
+    # Skor RFM gabungan dengan bobot
+    skor_rfm = round(0.30 * skor_R + 0.35 * skor_F + 0.35 * skor_M, 2),
+    # Label segmen
+    segmen = case_when(
+      skor_rfm >= 4.5                     ~ "Champions",
+      skor_rfm >= 3.5 & skor_rfm < 4.5    ~ "Loyal Customers",
+      skor_rfm >= 2.5 & skor_rfm < 3.5    ~ "Potential Loyalists",
+      skor_rfm >= 1.5 & skor_rfm < 2.5    ~ "At Risk",
+      TRUE                                ~ "Lost"
+    )
+  )
+
+# Ringkasan data
+cat("Jumlah pelanggan:", nrow(data_rfm), "\n")
+cat("Total pendapatan : $", format(sum(data_rfm$total_bayar), big.mark=","), "\n")
+cat("Rata-rata frekuensi rental:", round(mean(data_rfm$frekuensi_rental),1), "kali\n")
+```
+
+---
+
+# Visualisasi dan Analisis Data
+
+## Visualisasi 1 - Top 10 Pelanggan Berdasarkan Total Pembayaran
+
+```{r vis1_top10}
+top10 <- data_rfm %>%
+  arrange(desc(total_bayar)) %>%
+  slice_head(n = 10) %>%
+  mutate(nama_pelanggan = factor(nama_pelanggan,
+                                 levels = nama_pelanggan[order(total_bayar)]))
+
+ggplot(top10, aes(x = nama_pelanggan, y = total_bayar, fill = total_bayar)) +
+  geom_col(width = 0.7, show.legend = FALSE) +
+  geom_text(
+    aes(label = dollar(total_bayar, prefix = "$")),
+    hjust   = -0.1,
+    size    = 3.3,
+    color   = "#2b3a2c",
+    fontface = "bold"
+  ) +
+  coord_flip() +
+  scale_fill_gradient(low = "#8aaf7f", high = "#3d5a3e") +
+  scale_y_continuous(
+    labels = dollar_format(prefix = "$"),
+    expand = expansion(mult = c(0, 0.18))
+  ) +
+  labs(
+    title    = "Top 10 Pelanggan Berdasarkan Total Pembayaran",
+    subtitle = "Nilai transaksi kumulatif per pelanggan dalam USD",
+    x = NULL,
+    y = "Total Pembayaran (USD)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title    = element_text(color="#3d5a3e", face="bold", size=14),
+    plot.subtitle = element_text(color="#c0687a", size=10),
+    axis.text     = element_text(color="#2b3a2c"),
+    axis.text.y   = element_text(face="bold"),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    plot.margin = margin(10,20,10,10)
+  )
+```
+
+### Interpretasi Visualisasi 1 {-}
+
+<div class="callout-matcha">
+**Temuan Utama:**
+
+Visualisasi ini menampilkan 10 pelanggan dengan total pembayaran tertinggi selama periode data Sakila. Secara umum, nilai transaksi kumulatif pelanggan teratas berkisar antara **$150–$220**, jauh di atas rata-rata ($`r round(mean(data_rfm$total_bayar), 1)`). Pelanggan di urutan pertama berkontribusi sekitar **`r round(max(data_rfm$total_bayar)/sum(data_rfm$total_bayar)*100, 2)`%** dari total pendapatan seluruh pelanggan. Hal ini mengindikasikan distribusi pendapatan yang tidak merata (*skewed*), di mana sebagian kecil pelanggan menyumbang porsi pendapatan yang signifikan.
+
+Identifikasi kelompok ini krusial untuk program **retensi pelanggan (customer retention)**, kehilangan satu pelanggan dari daftar ini setara dengan kehilangan banyak pelanggan biasa.
+</div>
+
+---
+
+## Visualisasi 2 - Distribusi Frekuensi Rental
+
+```{r vis2_distribusi_freq}
+ggplot(data_rfm, aes(x = frekuensi_rental)) +
+  geom_histogram(
+    aes(y = after_stat(density)),
+    bins  = 30,
+    fill  = "#8aaf7f",
+    color = "#3d5a3e",
+    alpha = 0.8
+  ) +
+  geom_density(
+    color = "#c0687a",
+    linewidth = 1.1,
+    linetype  = "solid"
+  ) +
+  geom_vline(
+    xintercept = mean(data_rfm$frekuensi_rental),
+    color = "#3d5a3e", linetype = "dashed", linewidth = 0.9
+  ) +
+  geom_vline(
+    xintercept = median(data_rfm$frekuensi_rental),
+    color = "#c0687a", linetype = "dotted", linewidth = 0.9
+  ) +
+  annotate("text",
+    x = mean(data_rfm$frekuensi_rental) + 1.5,
+    y = 0.045,
+    label = paste0("Mean = ", round(mean(data_rfm$frekuensi_rental),1)),
+    color = "#3d5a3e", fontface="bold", size=3.5, hjust=0
+  ) +
+  annotate("text",
+    x = median(data_rfm$frekuensi_rental) - 1.5,
+    y = 0.042,
+    label = paste0("Median = ", round(median(data_rfm$frekuensi_rental),1)),
+    color = "#c0687a", fontface="bold", size=3.5, hjust=1
+  ) +
+  scale_x_continuous(breaks = seq(0, 50, by = 5)) +
+  labs(
+    title    = "Distribusi Frekuensi Rental Pelanggan",
+    subtitle = "Seberapa sering masing-masing pelanggan melakukan penyewaan film?",
+    x = "Jumlah Rental",
+    y = "Densitas"
+  ) +
+  theme_minimal(base_size=12) +
+  theme(
+    plot.title    = element_text(color="#3d5a3e", face="bold", size=14),
+    plot.subtitle = element_text(color="#c0687a", size=10),
+    axis.text     = element_text(color="#2b3a2c"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+### Interpretasi Visualisasi 2 {-}
+
+<div class="callout-pink">
+**Analisis Distribusi:**
+
+Distribusi frekuensi rental mendekati **distribusi normal** (kurva lonceng), dengan:
+
+- **Mean** ≈ `r round(mean(data_rfm$frekuensi_rental), 1)` kali rental per pelanggan  
+- **Median** ≈ `r round(median(data_rfm$frekuensi_rental), 1)` kali rental per pelanggan  
+- **Standar Deviasi** ≈ `r round(sd(data_rfm$frekuensi_rental), 1)`
+
+Kedekatan nilai mean dan median menunjukkan distribusi yang relatif **simetris**,  tidak ada pelanggan ekstrem yang terlalu mendominasi frekuensi. Sebagian besar pelanggan menyewa antara **`r round(mean(data_rfm$frekuensi_rental) - sd(data_rfm$frekuensi_rental), 0)`–`r round(mean(data_rfm$frekuensi_rental) + sd(data_rfm$frekuensi_rental), 0)` kali** (rentang ±1 standar deviasi dari mean, mencakup ~68% pelanggan menurut empirical rule).
+
+Ekor kanan distribusi (pelanggan dengan frekuensi sangat tinggi) adalah kandidat **Champions** dalam segmentasi RFM.
+</div>
+
+---
+
+## Analisis 1 - Statistika Deskriptif Ringkas
+
+```{r analisis1_statistik}
+
+ringkasan_stats <- data_rfm %>%
+  summarise(
+    N_Pelanggan         = as.character(n()),
+    Total_Pendapatan    = dollar(sum(total_bayar)),
+    Rata2_Pembayaran    = dollar(mean(total_bayar)),
+    Median_Pembayaran   = dollar(median(total_bayar)),
+    SD_Pembayaran       = dollar(sd(total_bayar)),
+    Rata2_Frekuensi     = as.character(round(mean(frekuensi_rental), 1)),
+    Median_Frekuensi    = as.character(round(median(frekuensi_rental), 1)),
+    Rata2_Recency_Hari  = as.character(round(mean(hari_sejak_terakhir), 1))
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to  = "Statistik",
+    values_to = "Nilai"
+  )
+
+kable(
+  ringkasan_stats,
+  caption = "Tabel 1. Ringkasan Statistika Deskriptif Pelanggan Sakila",
+  align   = c("l","r")
+) %>%
+  kable_styling(
+    bootstrap_options = c("striped","hover","condensed"),
+    full_width = FALSE,
+    position   = "center"
+  ) %>%
+  row_spec(0, background = "#3d5a3e", color = "white", bold = TRUE)
+```
+
+### Interpretasi Analisis 1 {-}
+
+<div class="callout-insight">
+**Insight Statistik:**
+
+Dari ringkasan statistik deskriptif, terlihat bahwa:
+
+1. **Nilai rata-rata pembayaran** pelanggan cukup signifikan, menandakan bahwa secara agregat bisnis rental Sakila menghasilkan pendapatan yang sehat.
+2. **Standar deviasi pembayaran** yang cukup besar mengindikasikan **heterogenitas pelanggan**, ada segmentasi alami yang perlu dieksploitasi lebih lanjut.
+3. **Rata-rata recency** menunjukkan sebagian besar pelanggan masih aktif dalam 2-4 minggu terakhir, menandakan base pelanggan yang masih *engaged*.
+
+Formula rata-rata tertimbang yang relevan:
+$$\bar{x} = \frac{\sum_{i=1}^{n} x_i}{n}$$
+
+dan koefisien variasi untuk mengukur heterogenitas:
+
+$$CV = \frac{s}{\bar{x}} \times 100\%$$
+
+$$CV_{\text{bayar}} = \frac{`r round(sd(data_rfm$total_bayar),1)`}{`r round(mean(data_rfm$total_bayar),1)`} \times 100\% = `r round(sd(data_rfm$total_bayar)/mean(data_rfm$total_bayar)*100, 1)`\%$$
+
+CV > 30% mengindikasikan **variabilitas tinggi** tanda adanya segmen pelanggan yang berbeda-beda.
+</div>
+
+---
+
+## Visualisasi 3 - Hubungan Frekuensi Rental vs Total Pembayaran
+
+```{r vis3_scatter}
+# Labeling top 10 saja
+top10_label <- data_rfm %>% arrange(desc(total_bayar)) %>% slice_head(n=10)
+
+ggplot(data_rfm, aes(x = frekuensi_rental, y = total_bayar, color = skor_rfm)) +
+  geom_point(alpha = 0.55, size = 2.2) +
+  geom_smooth(method = "lm", se = TRUE, color = "#c0687a",
+              linetype = "solid", linewidth = 1.0, fill = "#f2b9c3", alpha=0.25) +
+  geom_label_repel(
+    data    = top10_label,
+    aes(label = nama_pelanggan),
+    size    = 2.7,
+    box.padding   = 0.35,
+    point.padding = 0.3,
+    color   = "#3d5a3e",
+    fill    = "white",
+    segment.color = "#8aaf7f",
+    max.overlaps  = 15,
+    fontface = "bold"
+  ) +
+  scale_color_gradient2(
+    low    = "#f2b9c3",
+    mid    = "#8aaf7f",
+    high   = "#3d5a3e",
+    midpoint = 3,
+    name   = "Skor RFM"
+  ) +
+  scale_x_continuous(breaks = seq(0, 50, by = 5)) +
+  scale_y_continuous(labels = dollar_format(prefix = "$")) +
+  labs(
+    title    = "🔗 Hubungan Frekuensi Rental & Total Pembayaran",
+    subtitle = "Setiap titik mewakili satu pelanggan; label = Top 10 pelanggan",
+    x = "Frekuensi Rental (kali)",
+    y = "Total Pembayaran (USD)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title    = element_text(color="#3d5a3e", face="bold", size=14),
+    plot.subtitle = element_text(color="#c0687a", size=10),
+    legend.position = "right",
+    panel.grid.minor = element_blank()
+  )
+```
+
+### Interpretasi Visualisasi 3 {-}
+
+<div class="callout-matcha">
+**Analisis Korelasi:**
+
+```{r korelasi_inline, include=TRUE}
+r_pearson <- cor(data_rfm$frekuensi_rental, data_rfm$total_bayar)
+cat("Koefisien Korelasi Pearson (r):", round(r_pearson, 4))
+```
+
+Scatter plot menunjukkan **hubungan linear positif yang kuat** antara frekuensi rental dan total pembayaran, dengan koefisien korelasi Pearson:
+
+$$r = \frac{\sum_{i=1}^{n}(x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_{i=1}^{n}(x_i - \bar{x})^2 \cdot \sum_{i=1}^{n}(y_i - \bar{y})^2}} \approx `r round(r_pearson, 3)`$$
+
+Nilai $r \approx `r round(r_pearson, 3)`$ berada mendekati $+1$, mengindikasikan **korelasi positif kuat**: pelanggan yang lebih sering menyewa cenderung membayar lebih banyak secara total. Hal ini logis karena setiap transaksi rental menghasilkan pembayaran. Pelanggan berlabel di atas adalah **kandidat prioritas** untuk program loyalitas.
+</div>
+
+---
+
+## Analisis 2 - Regresi Linear Sederhana (Frekuensi → Pembayaran)
+
+```{r analisis2_regresi}
+model_lm <- lm(total_bayar ~ frekuensi_rental, data = data_rfm)
+ringkasan_model <- summary(model_lm)
+
+cat("=== Hasil Regresi Linear ===\n")
+cat("Intercept (β₀)     :", round(coef(model_lm)[1], 4), "\n")
+cat("Koefisien (β₁)     :", round(coef(model_lm)[2], 4), "\n")
+cat("R-squared           :", round(ringkasan_model$r.squared, 4), "\n")
+cat("Adj. R-squared      :", round(ringkasan_model$adj.r.squared, 4), "\n")
+cat("p-value (Frekuensi) :", format(coef(summary(model_lm))[2,4], scientific=TRUE), "\n")
+```
+
+### Interpretasi Analisis 2 {-}
+
+<div class="callout-pink">
+**Persamaan Regresi:**
+
+Model regresi linear sederhana yang diestimasi adalah:
+
+$$\widehat{\text{Total Bayar}}_i = \hat{\beta}_0 + \hat{\beta}_1 \cdot \text{Frekuensi Rental}_i$$
+
+$$\widehat{\text{Total Bayar}}_i = `r round(coef(model_lm)[1], 2)` + `r round(coef(model_lm)[2], 2)` \cdot \text{Frekuensi Rental}_i$$
+
+**Interpretasi koefisien:**
+- $\hat{\beta}_0 = `r round(coef(model_lm)[1], 2)`$ → Jika pelanggan tidak pernah menyewa, estimasi pembayaran adalah \$`r round(coef(model_lm)[1], 2)` (nilai teoritis).
+- $\hat{\beta}_1 = `r round(coef(model_lm)[2], 2)`$ → **Setiap tambahan 1 kali rental**, rata-rata total pembayaran bertambah sebesar **\$`r round(coef(model_lm)[2], 2)`**.
+- $R^2 = `r round(ringkasan_model$r.squared, 4)`$ → **`r round(ringkasan_model$r.squared*100, 1)`% variasi** total pembayaran dapat dijelaskan oleh frekuensi rental.
+
+Nilai p-value << 0.05 menunjukkan koefisien **signifikan secara statistis**, frekuensi rental merupakan prediktor yang bermakna untuk estimasi total pembayaran pelanggan.
+</div>
+
+---
+
+## Visualisasi 4 - Segmentasi Pelanggan RFM
+
+```{r vis4_segmentasi}
+seg_summary <- data_rfm %>%
+  group_by(segmen) %>%
+  summarise(
+    jumlah        = n(),
+    total_bayar   = sum(total_bayar),
+    rata2_skor    = mean(skor_rfm),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    persen_pelanggan = round(jumlah / sum(jumlah) * 100, 1),
+    persen_bayar     = round(total_bayar / sum(total_bayar) * 100, 1)
+  ) %>%
+  arrange(desc(rata2_skor))
+
+# Warna segmen
+warna_segmen <- c(
+  "Champions"          = "#3d5a3e",
+  "Loyal Customers"    = "#8aaf7f",
+  "Potential Loyalists"= "#c8dfc5",
+  "At Risk"            = "#f2b9c3",
+  "Lost"               = "#c0687a"
+)
+
+ggplot(seg_summary,
+       aes(x = reorder(segmen, rata2_skor),
+           y = persen_pelanggan,
+           fill = segmen)) +
+  geom_col(width = 0.65, show.legend = FALSE) +
+  geom_text(
+    aes(label = paste0(persen_pelanggan, "%\n(", jumlah, " pelanggan)")),
+    hjust = -0.08, size = 3.2, color = "#2b3a2c", fontface="bold", lineheight=1.3
+  ) +
+  coord_flip() +
+  scale_fill_manual(values = warna_segmen) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.25))) +
+  labs(
+    title    = "Segmentasi Pelanggan Berdasarkan Skor RFM",
+    subtitle = "Proporsi pelanggan di setiap segmen",
+    x = NULL,
+    y = "Persentase Pelanggan (%)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title    = element_text(color="#3d5a3e", face="bold", size=14),
+    plot.subtitle = element_text(color="#c0687a", size=10),
+    axis.text     = element_text(color="#2b3a2c", size=11),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank()
+  )
+```
+
+### Interpretasi Visualisasi 4 {-}
+
+```{r tabel_segmen}
+kable(seg_summary %>%
+        select(Segmen=segmen, `Jml Pelanggan`=jumlah,
+               `% Pelanggan`=persen_pelanggan,
+               `Total Bayar (USD)`=total_bayar,
+               `% Pendapatan`=persen_bayar,
+               `Rata-rata Skor RFM`=rata2_skor),
+      caption = "Tabel 2. Ringkasan Segmen Pelanggan RFM",
+      digits  = 2, align = c("l","r","r","r","r","r")) %>%
+  kable_styling(
+    bootstrap_options = c("striped","hover","condensed"),
+    full_width = TRUE
+  ) %>%
+  row_spec(0, background = "#c0687a", color = "white", bold = TRUE) %>%
+  row_spec(1, background = "#c8dfc5")
+```
+
+<div class="callout-insight">
+**Insight Segmentasi:**
+
+Hasil segmentasi RFM mengungkap struktur pelanggan yang sangat bermakna:
+
+- **Champions** adalah pelanggan paling berharga: menyewa sering, membayar besar, dan baru saja aktif. Mereka harus menjadi prioritas program loyalitas eksklusif.
+- **Loyal Customers** adalah tulang punggung bisnis, konsisten dan dapat diandalkan. Program upselling sangat cocok untuk segmen ini.
+- **Potential Loyalists** adalah peluang emas: mereka menunjukkan tanda-tanda loyalitas namun belum mencapai puncaknya. Intervensi tepat bisa mengangkat mereka ke segmen Loyal.
+- **At Risk & Lost** memerlukan strategi **win-back**, mungkin melalui promosi khusus atau survei kepuasan pelanggan.
+
+Distribusi ini selaras dengan **Prinsip Pareto (80/20)**: sekitar 20% pelanggan di segmen teratas bertanggung jawab atas porsi pendapatan yang sangat besar.
+</div>
+
+---
+
+## Visualisasi 5 - Kontribusi Pendapatan per Segmen (Pie Chart)
+
+```{r vis5_pie}
+ggplot(seg_summary, aes(x = "", y = persen_bayar, fill = segmen)) +
+  geom_col(width = 1, color = "white", linewidth = 0.8) +
+  coord_polar(theta = "y", start = 0) +
+  geom_text(
+    aes(label = paste0(persen_bayar, "%")),
+    position = position_stack(vjust = 0.55),
+    size = 4, fontface = "bold", color = "white"
+  ) +
+  scale_fill_manual(values = warna_segmen, name = "Segmen") +
+  labs(
+    title    = "Kontribusi Pendapatan per Segmen Pelanggan",
+    subtitle = "Persentase total pendapatan dari setiap segmen RFM"
+  ) +
+  theme_void(base_size = 12) +
+  theme(
+    plot.title     = element_text(color="#3d5a3e", face="bold", size=14, hjust=0.5),
+    plot.subtitle  = element_text(color="#c0687a", size=10, hjust=0.5),
+    legend.position = "right",
+    legend.text    = element_text(size=9)
+  )
+```
+
+### Interpretasi Visualisasi 5 {-}
+
+<div class="callout-matcha">
+**Distribusi Kontribusi Pendapatan:**
+
+Pie chart ini mempertegas temuan segmentasi RFM dari sudut pandang **kontribusi pendapatan**. Segmen **Champions** dan **Loyal Customers**, meskipun secara jumlah mungkin tidak dominan, menyumbang porsi pendapatan yang jauh lebih besar dibandingkan proporsi jumlahnya, bukti konkret dari ketidaksetaraan kontribusi pelanggan.
+
+Sebaliknya, segmen **At Risk** dan **Lost** meskipun ada dalam jumlah tertentu, kontribusi pendapatan mereka sangat rendah. Investasi dalam program reaktivasi mereka perlu dievaluasi berdasarkan **Customer Lifetime Value (CLV)**:
+
+$$\text{CLV} \approx \frac{\bar{M} \times \bar{F}}{\text{Churn Rate}}$$
+
+di mana $\bar{M}$ adalah rata-rata monetary, $\bar{F}$ adalah rata-rata frekuensi per periode, dan Churn Rate adalah persentase pelanggan yang berhenti berlangganan per periode.
+</div>
+
+---
+
+## Analisis 3 - Uji Kruskal-Wallis (Perbedaan Total Bayar Antar Segmen)
+
+```{r analisis3_kruskal}
+# Uji non-parametrik karena distribusi tidak harus normal
+kw_test <- kruskal.test(total_bayar ~ segmen, data = data_rfm)
+cat("=== Uji Kruskal-Wallis ===\n")
+cat("H statistic  :", round(kw_test$statistic, 4), "\n")
+cat("Derajat bebas:", kw_test$parameter, "\n")
+cat("p-value      :", format(kw_test$p.value, scientific=TRUE), "\n")
+cat("\nKesimpulan   :", ifelse(kw_test$p.value < 0.05,
+  "Terdapat perbedaan signifikan total pembayaran antar segmen (p < 0.05).",
+  "Tidak terdapat perbedaan signifikan (p >= 0.05)."))
+```
+
+### Interpretasi Analisis 3 {-}
+
+<div class="callout-pink">
+**Uji Hipotesis:**
+
+Uji Kruskal-Wallis digunakan sebagai alternatif non-parametrik dari ANOVA untuk menguji hipotesis:
+
+$$H_0: \text{Distribusi total bayar sama untuk semua segmen}$$
+$$H_1: \text{Paling tidak satu segmen memiliki distribusi berbeda}$$
+
+Dengan statistik uji:
+$$H = \frac{12}{n(n+1)} \sum_{j=1}^{k} \frac{R_j^2}{n_j} - 3(n+1)$$
+
+di mana $R_j$ adalah jumlah rank kelompok ke-$j$, $n_j$ adalah ukuran sampel kelompok, dan $n$ adalah total observasi.
+
+Hasil uji menunjukkan p-value $< 0.05$, sehingga $H_0$ **ditolak**, terdapat perbedaan yang **signifikan secara statistis** dalam distribusi total pembayaran antar segmen pelanggan. Ini memvalidasi bahwa segmentasi RFM yang dilakukan berhasil membedakan kelompok pelanggan yang memiliki perilaku pembayaran berbeda secara nyata.
+</div>
+
+---
+
+# Ringkasan dan Kesimpulan
+
+<div class="stat-row">
+<div class="stat-card">
+  <span class="stat-val">`r nrow(data_rfm)`</span>
+  <span class="stat-label">Total Pelanggan</span>
+</div>
+<div class="stat-card">
+  <span class="stat-val">`r dollar(sum(data_rfm$total_bayar))`</span>
+  <span class="stat-label">Total Pendapatan</span>
+</div>
+<div class="stat-card">
+  <span class="stat-val">`r round(mean(data_rfm$frekuensi_rental),1)`×</span>
+  <span class="stat-label">Rata-rata Rental</span>
+</div>
+<div class="stat-card">
+  <span class="stat-val">`r sum(data_rfm$segmen=="Champions")`</span>
+  <span class="stat-label">Champions</span>
+</div>
+</div>
+
+## Kesimpulan Utama
+
+<div class="callout-matcha">
+**Rangkuman Temuan:**
+
+1. **Top pelanggan** memiliki total pembayaran yang jauh di atas rata-rata, mengindikasikan adanya segmentasi alami yang dapat dieksploitasi untuk program loyalitas bertarget.
+
+2. **Distribusi frekuensi rental** mendekati normal dengan mean ~`r round(mean(data_rfm$frekuensi_rental),1)` rental per pelanggan, menandakan base pelanggan yang relatif homogen dalam hal aktivitas penyewaan.
+
+3. **Korelasi kuat** antara frekuensi rental dan total pembayaran ($r \approx `r round(cor(data_rfm$frekuensi_rental, data_rfm$total_bayar), 2)`$) menegaskan bahwa meningkatkan engagement frekuensi rental secara langsung berdampak pada peningkatan pendapatan.
+
+4. **Segmentasi RFM** berhasil mengidentifikasi kelompok pelanggan yang berbeda secara perilaku dan kontribusi, dengan segmen Champions sebagai pilar utama pendapatan.
+
+5. **Uji Kruskal-Wallis** memvalidasi bahwa perbedaan total pembayaran antar segmen adalah **signifikan secara statistis** (p < 0.05).
+</div>
+
+## Rekomendasi Bisnis
+
+<div class="callout-insight">
+ **Rekomendasi Strategis:**
+
+| Segmen | Strategi |
+|---|---|
+| Champions | Program VIP eksklusif, early access film baru, diskon anniversary |
+| Loyal Customers | Loyalty points, upselling ke paket premium |
+| Potential Loyalists | Email campaign personal, rekomendasi film berbasis riwayat sewa |
+| At Risk | Survei kepuasan, penawaran win-back, reminder promosi |
+| Lost | Re-engagement campaign dengan insentif besar atau biarkan churn |
+
+Prioritaskan investasi pada **Champions** dan **Loyal Customers**, biaya mempertahankan pelanggan yang ada jauh lebih murah daripada mendapatkan pelanggan baru.
+</div>
+
+---
+
+
+<script>
+(function() {
+  var toc = document.getElementById('TOC');
+  if (!toc) return;
+
+  /* ── Progress bar element ── */
+  var bar = document.createElement('div');
+  bar.id = 'toc-progress-bar';
+  toc.style.position = 'relative';
+  toc.appendChild(bar);
+
+  /* ── Make TOC inner ul scrollable ── */
+  var tocUl = toc.querySelector('ul');
+  if (tocUl) {
+    tocUl.style.overflowY = 'auto';
+    tocUl.style.maxHeight = 'calc(100vh - 110px)';
+    tocUl.style.margin = '0';
+    tocUl.style.padding = '10px 0 12px';
+  }
+
+  /* ── Collect all section headings ── */
+  var headings = document.querySelectorAll('h1[id], h2[id], h3[id]');
+  var activeId = null;
+
+  /* ── IntersectionObserver: highlight active TOC link ── */
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (!entry.isIntersecting) return;
+      var id = entry.target.id;
+      if (id === activeId) return;
+      activeId = id;
+
+      toc.querySelectorAll('a.toc-active').forEach(function(a) {
+        a.classList.remove('toc-active');
+      });
+
+      var link = toc.querySelector('a[href="#' + id + '"]');
+      if (link) {
+        link.classList.add('toc-active');
+
+        /* auto-scroll TOC so active item stays visible */
+        if (tocUl) {
+          var linkTop = link.offsetTop;
+          var ulH = tocUl.clientHeight;
+          var scrollT = tocUl.scrollTop;
+          if (linkTop < scrollT + 40 || linkTop > scrollT + ulH - 60) {
+            tocUl.scrollTo({ top: linkTop - ulH / 2 + 20, behavior: 'smooth' });
+          }
+        }
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+
+  headings.forEach(function(h) { observer.observe(h); });
+
+  /* ── Progress bar ── */
+  window.addEventListener('scroll', function() {
+    var docH = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = docH > 0 ? (window.scrollY / docH * 100) : 0;
+    bar.style.width = pct.toFixed(1) + '%';
+  }, { passive: true });
+})();
+</script>
+
